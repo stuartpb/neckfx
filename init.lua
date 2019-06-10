@@ -7,39 +7,44 @@ local spec = {
 }
 local specBytes = select(2, string.gsub(spec.format,'[a-z]8',''));
 
-local minBrightness = 0
-local maxBrightness = 255
+local randomSat = 255
+local randomValue = 64
 
-local function randombyte()
-  return node.random(minBrightness, maxBrightness)
+-- NOTE: this assumes three-bytes-per-pixel
+-- it can be fixed later
+local function randomhsv(r)
+  return function () 
+    return string.char(color_utils.hsv2grb(
+      node.random(r[1][1],r[1][2]),
+      node.random(r[2][1],r[2][2]),
+      node.random(r[3][1],r[3][2])))
+  end
 end
-local function randomchar()
-  return string.char(randombyte())
-end
-local function randomstring(l)
-  return (string.rep('.',l):gsub('.',randomchar))
+local randomcolor = randomhsv{{0,360},{255,255},{64,64}}
+local function randompixels(l)
+  return (string.rep('.',l):gsub('.',randomcolor))
 end
 
 ws2812.init()
 
 local displayBuffer = ws2812.newBuffer(spec.length, specBytes)
-displayBuffer:replace(randomstring(spec.length * specBytes))
+displayBuffer:replace(randompixels(spec.length))
 local backBuffer = ws2812.newBuffer(spec.length, specBytes)
 backBuffer:replace(displayBuffer)
 
-local frameDelay = 10;
-local randomInterval = 50;
+local frameDelay = 50;
+local randomInterval = 10;
 
 local frameTimer = tmr.create()
 local randomTimer = tmr.create()
 
 local function drawFrame()
-  displayBuffer:mix(254,displayBuffer,1,backBuffer)
+  displayBuffer:mix(250,displayBuffer,5,backBuffer)
   driver.write(displayBuffer)
 end
 
 local function randomizePixel()
-  backBuffer:set(node.random(spec.length),randomstring(specBytes))
+  backBuffer:set(node.random(spec.length),randomcolor())
 end
 
 drawFrame()
