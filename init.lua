@@ -7,20 +7,17 @@ local spec = {
 }
 local specBytes = select(2, string.gsub(spec.format,'[a-z]8',''));
 
-local randomSat = 255
-local randomValue = 64
-
 -- NOTE: this assumes three-bytes-per-pixel
 -- it can be fixed later
 local function randomhsv(r)
   return function () 
     return string.char(color_utils.hsv2grb(
-      node.random(r[1][1],r[1][2]),
+      (node.random(r[1][1],r[1][2])) % 360,
       node.random(r[2][1],r[2][2]),
       node.random(r[3][1],r[3][2])))
   end
 end
-local randomcolor = randomhsv{{0,360},{255,255},{64,64}}
+local randomcolor = randomhsv{{0,30},{255,255},{2,128}}
 local function randompixels(l)
   return (string.rep('.',l):gsub('.',randomcolor))
 end
@@ -39,7 +36,7 @@ local frameTimer = tmr.create()
 local randomTimer = tmr.create()
 
 local function drawFrame()
-  displayBuffer:mix(250,displayBuffer,5,backBuffer)
+  displayBuffer:mix(240,displayBuffer,16,backBuffer)
   driver.write(displayBuffer)
 end
 
