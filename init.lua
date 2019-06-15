@@ -117,7 +117,7 @@ local function randomRows(count)
   return rows
 end
 
-local rows = randomRows(spec.length)
+local rows = randomRows(spec.length/2)
 
 local function frontbufferChannelSelfMapper()
   local nmap = #maps
@@ -175,8 +175,10 @@ end
 
 local function renderToDisplayBuffer()
   local ngen = #generators
+  local back = spec.length
   for i = 1, #rows do
     displayBuffer:set(i, rasterize(unpack(rows[i], ngen + 1)))
+    displayBuffer:set(back-i+1, rasterize(unpack(rows[i], ngen + 1)))
   end
 end
 
