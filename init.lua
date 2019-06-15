@@ -17,13 +17,18 @@ local function randrange(l, h, m)
     return random(l, h)
   end end
 end
+local function randrangeadd(l, h, m)
+  return function(x)
+    return (x + random(l, h)) % m
+  end
+end
 
 function linwrap(from, to, by)
   return from + (to-from) / by
 end
 function huewrap(from, to, by)
   if from > to then
-    if from - to > 180 then
+    if from - to >= 180 then
       return linwrap(from, to + 360, by) % 360
     else return linwrap(from, to, by) end
   elseif to - from > 180 then
@@ -31,12 +36,43 @@ function huewrap(from, to, by)
   else return linwrap(from, to, by) end
 end
 
-local generators = {
-  randrange(50,200), -- how long this color will be drifted from
-  randrange(0, 360, 360),
-  randrange(255),
-  randrange(16, 16)
+local brightRange = randrange(16, 16)
+
+local themeSets = {
+  fiery = {
+    randrange(5,10),
+    randrange(0, 30, 360),
+    randrange(255),
+    brightRange
+  },
+  watery = {
+    randrange(10,30),
+    randrange(180, 240, 360),
+    randrange(255),
+    brightRange
+  },
+  sakura = {
+    randrange(15,45),
+    randrange(330, 360, 360),
+    randrange(128, 232),
+    randrange(12, 16)
+  },
+  delirium = {
+    randrange(60,150),
+    randrange(0, 360, 360),
+    randrange(255),
+    brightRange
+  }
 }
+
+local generators = themeSets.delirium;
+local regenerators = {
+  generators[1],
+  randrangeadd(90, 270, 360),
+  generators[3],
+  generators[4]
+}
+
 local maps = {huewrap, linwrap, linwrap}
 local rasterize = color_utils.hsv2grb
 
@@ -57,8 +93,8 @@ local frontbuffer
 -- end values)
 
 local function regenerate(t)
-  for i = 1, #generators do
-    t[i] = generators[i]()
+  for i = 1, #regenerators do
+    t[i] = regenerators[i](t[i])
   end
   return t
 end
@@ -68,8 +104,11 @@ local function randomRows(count)
   for i = 1, count do
     local ngen = #generators
     local skip = ngen - #maps
-    local row = regenerate{}
+    local row = {}
     rows[i] = row
+    for j = 1, #generators do
+      row[j] = generators[j]()
+    end
     -- populate additional initial state
     for j = 1, #maps do
       row[j + ngen] = generators[j + skip]()
@@ -99,7 +138,7 @@ local function frontbufferChannelSelfMapper()
           row[ngen + i],
           row[dstep + i],
           unpack(row, 1, dstep))
-      end    
+      end
     end
   end
 end
@@ -153,7 +192,7 @@ end
 
 ws2812.init()
 
-local frameDelay = 50;
+local frameDelay = 33;
 
 local frameTimer = tmr.create()
 
