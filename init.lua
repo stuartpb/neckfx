@@ -38,59 +38,74 @@ end
 
 local brightRange = randrange(16, 16)
 
+function fixedHueRange(l, h, tgen, sgen, vgen)
+  local hgen = randrange(l, h, 360)
+  return {
+    regenerate = function (row)
+      row[1] = tgen()
+      row[2], row[3], row[4] = color_utils.hsv2grb(hgen(), sgen(), vgen())
+    end,
+    generate = function (row)
+      row[1] = tgen()
+      row[2], row[3], row[4] = color_utils.hsv2grb(hgen(), sgen(), vgen())
+      row[5], row[6], row[7] = color_utils.hsv2grb(hgen(), sgen(), vgen())
+    end
+  }
+end
+
+function rainbowHueShifter(l, h, tgen, sgen, vgen)
+  local hgen = randrange(l, h, 360)
+  return {
+    regenerate = function (row)
+      row[1] = tgen()
+      local oldHue = color_utils.grb2hsv(row[2], row[3], row[4])
+      local newHue = oldHue + random(l, h)) % 360
+      row[2], row[3], row[4] = color_utils.hsv2grb(newHue, sgen(), vgen())
+    end,
+    generate = function (row)
+      row[1] = tgen()
+      row[2], row[3], row[4] = color_utils.hsv2grb(random(0, 360), sgen(), vgen())
+      row[5], row[6], row[7] = color_utils.hsv2grb(random(0, 360), sgen(), vgen())
+    end
+  }
+end
+
+function linearShift(row)
+  for i = 2, 4 do
+    row[i] = row[i] - (row[i-3]/row[i]) / row[1]
+  end
+end
+
 local themeSets = {
-  fiery = {
+  fiery = fixedHueRange(0, 30,
     randrange(5,10),
-    randrange(0, 30, 360),
     randrange(255),
     brightRange
-  },
-  watery = {
+  ),
+  watery = fixedHueRange(180, 240,
     randrange(10,30),
-    randrange(180, 240, 360),
     randrange(255),
     brightRange
-  },
-  sakura = {
+  ),
+  sakura = fixedHueRange(330, 360,
     randrange(15,45),
-    randrange(330, 360, 360),
     randrange(128, 232),
     randrange(12, 16)
-  },
-  delirium = {
+  ),
+  delirium = randomTHSV(
     randrange(60,150),
     randrange(0, 360, 360),
     randrange(255),
     brightRange
-  }
+  )
 }
 
-local generators = themeSets.delirium;
-local regenerators = {
-  generators[1],
-  randrangeadd(90, 270, 360),
-  generators[3],
-  generators[4]
-}
+local cellLogic = themes.delirium
 
-local maps = {huewrap, linwrap, linwrap}
-local rasterize = color_utils.hsv2grb
+local generate = cellLogic.generate
+local regenerate = cellLogic.regenerate
 
-local frontbuffer
-
--- The backbuffer-to-frontbuffer-row-apparatus:
--- The idea is that each cell has a "backbuffer" (middle) that it will
--- transition to based on factors kept in the "static" (beginning) section
--- that is operated on by the outside stateful transition apparatus (ie.
--- frame counter).
--- At some point in the future, the maps may be multi-dimensional or something
--- to chain multiple mapping steps across multiple buffers
--- (possibly in some kind of double-buffering scheme, not that that'd ever
--- be necessary for a WS2812's timing): for now, it's
--- randomly-generated variables straight to the frontbuffer.
--- Data is initialized by generators, followed by the tail end of generators
--- repeated to represent an "initial frontbuffer" (the front buffer being the
--- end values)
+local rasterize = function(row) return row[5], row[6], row[7] end
 
 local function regenerate(t)
   for i = 1, #regenerators do
