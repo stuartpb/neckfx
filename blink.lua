@@ -16,7 +16,7 @@ return function(pin, state, pattern, times, cb)
         step = 0
         tick()
       else
-        gpio.write(pin, (step - offset) % 2)
+        gpio.write(pin, offset)
         timer:unregister()
         if cb then cb() end
       end
