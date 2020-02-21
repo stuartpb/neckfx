@@ -148,17 +148,6 @@ end
 
 local displayBuffer = ws2812.newBuffer(spec.length, specBytes)
 
-local function interspect(f,t)
-  if t then return function(...)
-    print(...)
-    return f(t,...)
-  end
-  else return function(...)
-    print(...)
-    return f(...)
-  end end
-end
-
 local function renderToDisplayBuffer()
   local ngen = #generators
   local back = spec.length
